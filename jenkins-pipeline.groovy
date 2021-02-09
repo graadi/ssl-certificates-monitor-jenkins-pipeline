@@ -76,7 +76,7 @@ pipeline {
                         runAggregate = false
                     } finally {
                         runAggregate = runAggregate.toBoolean()
-                    }                    
+                    }
 
                     def greenReport
                     try {
@@ -85,7 +85,7 @@ pipeline {
                         greenReport = 7
                     } finally {
                         greenReport = greenReport.toInteger()
-                    }                    
+                    }
 
                     def orangeReport
                     try {
@@ -94,8 +94,8 @@ pipeline {
                         orangeReport = 3
                     } finally {
                         orangeReport = orangeReport.toInteger()
-                    } 
-                    
+                    }
+
                     def redReport
                     try {
                         redReport = "${RED_REPORT}"
@@ -104,7 +104,7 @@ pipeline {
                     } finally {
                         redReport = redReport.toInteger()
                     }
- 
+
                     switchCases = [
                         week: greenReport,
                         three: orangeReport,
@@ -127,7 +127,7 @@ pipeline {
             steps {
 
                 dir("${WORKSPACE}/job_repo") {
-                    
+
                     script {
                         git url: jobGitRepository, branch: jobGitRepositoryBranch
                     }
@@ -152,7 +152,7 @@ pipeline {
                 script {
 
                     dir("${WORKSPACE}/job_repo") {
-                        
+
                         sh 'sudo chown -R jenkins:jenkins ${WORKSPACE}/job_repo/'
 
                         try {
@@ -162,7 +162,7 @@ pipeline {
                         }
 
                         if (!fileExists('config/base-date.cfg')) {
-                            
+
                             def baseDate = java.time.LocalDateTime.now()
                             writeFile file: "config/base-date.cfg", text: "${baseDate}"
 
@@ -175,7 +175,7 @@ pipeline {
                     }
                 }
             }
-        }        
+        }
 
         stage('SSL Certificates Check') {
 
@@ -184,23 +184,23 @@ pipeline {
                 script {
 
                     dir("${WORKSPACE}/job_repo") {
-                        
+
                         def certificateStoreFiles= getCertificateStoreFiles("${WORKSPACE}/job_repo/certificate-stores");
-                        
+
                         certificateStoreFiles.each { certificateStoreFile ->
-                            
+
                             String type = certificateStoreFile.substring(certificateStoreFile.lastIndexOf(".") + 1).toUpperCase()
-                            
+
                             switch(type) {
 
                                 case "DL":
                                     print 'Domains List File'
-                                    
+
                                     def output = sh(returnStdout: true, script: '${WORKSPACE}/job_repo/ssl-cert-check.sh -i -S -f certificate-stores/' + certificateStoreFile)
-                                    
-                                    print '--------------- Meganexus Domains List ---------------'
+
+                                    print '--------------- Domains List ---------------'
                                     print output
-                                    print '------------------------------------------------------'
+                                    print '--------------------------------------------'
 
                                     def jsonContent = readJSON file: 'domains-file-json-output.json'
                                     def domainsCertificatesArray = jsonContent.certificatesList
@@ -216,10 +216,10 @@ pipeline {
                                 case "CRT":
                                     print 'Certificate File'
                                     def output = sh(returnStdout: true, script: '${WORKSPACE}/job_repo/ssl-cert-check.sh -c certificate-stores/' + certificateStoreFile + ' -t crt')
-                                    
-                                    print '--------------- Meganexus Domains List ---------------'
+
+                                    print '--------------- Certificate File ---------------'
                                     print output
-                                    print '------------------------------------------------------'
+                                    print '-------------------------------------------------'
 
                                     def jsonContent = readJSON file: 'keystore-file-json-output.json'
                                     def domainsCertificatesArray = jsonContent.certificatesList
@@ -229,22 +229,22 @@ pipeline {
                                         def daysToExpire = arrayEntry.daysToExpire.toInteger()
                                         addEntryToGroup(daysToExpire, arrayEntry, greenGroup, orangeGroup, redGroup, switchCases)
                                         aggregated.add(arrayEntry)
-                                    }                                                                        
+                                    }
                                     break
 
                                 case "JKS":
-                                    print 'Certificate TrustStore'                                    
+                                    print 'Certificate TrustStore. Yet to be implemented.'
                                     break
 
                                 default:
                                     print 'No valid case has been found. Build will be marked as unstable.'
                                     currentBuild.result = 'UNSTABLE'
                                     break
-                            }                            
+                            }
                         }
 
                         buildHtmlTemplate(
-                            buildGroupMap(greenGroup), 
+                            buildGroupMap(greenGroup),
                             'html/green-template-parts/component.part.html',
                             'html/green-template-parts/component.list.part.html',
                             'html/green-group-template.html',
@@ -253,7 +253,7 @@ pipeline {
                         )
 
                         buildHtmlTemplate(
-                            buildGroupMap(orangeGroup), 
+                            buildGroupMap(orangeGroup),
                             'html/orange-template-parts/component.part.html',
                             'html/orange-template-parts/component.list.part.html',
                             'html/orange-group-template.html',
@@ -262,13 +262,13 @@ pipeline {
                         )
 
                         buildHtmlTemplate(
-                            buildGroupMap(redGroup), 
+                            buildGroupMap(redGroup),
                             'html/red-template-parts/component.part.html',
                             'html/red-template-parts/component.list.part.html',
                             'html/red-group-template.html',
                             "red-group-template-email.html",
                             "Expired SSL Certificates"
-                        )                        
+                        )
                     }
                 }
             }
@@ -281,30 +281,30 @@ pipeline {
                 script {
 
                     dir("${WORKSPACE}/job_repo") {
-                        
+
                         sh 'sudo chown -R jenkins:jenkins ${WORKSPACE}/job_repo/'
 
                         if (fileExists('config/base-date.cfg')) {
-                            
+
                             def file = readFile 'config/base-date.cfg'
                             def line = file.readLines()[0]
-                            
+
                             def days = getDateDifferenceInDays(line, SDF_PATTERN)
 
                             if(runAggregate || (days >= reportFrequency && (days % reportFrequency == 0))) {
-                                
-                                aggregatedReport(aggregated, 
-                                    'html/aggregate-report/template.html', 
-                                    'html/aggregate-report/part.html', 
-                                    'aggregate-email.html', 
-                                    'Meganexus SSL Certificates Summary'
+
+                                aggregatedReport(aggregated,
+                                    'html/aggregate-report/template.html',
+                                    'html/aggregate-report/part.html',
+                                    'aggregate-email.html',
+                                    'SSL Certificates Summary'
                                 )
                             }
                         }
                     }
                 }
             }
-        }                
+        }
     }
 
     post {
@@ -341,7 +341,7 @@ def getAllFiles(def rootPath) {
     for (subPath in rootPath.list()) {
         list << subPath.getName()
     }
-    
+
     return list
 }
 
@@ -389,7 +389,7 @@ def addEntryToGroup(days, groupItem, greenGroup, orangeGroup, redGroup, switchCa
         case switchCases.zero:
             redGroup.add(groupItem)
             break
-    }    
+    }
 }
 
 def buildGroupMap(group) {
@@ -401,7 +401,7 @@ def buildGroupMap(group) {
         if(map.containsKey(item.serialNumber)) {
 
             map.get(item.serialNumber).hostNameList.add(item.hostName)
-            
+
         } else {
 
             config = [
@@ -422,26 +422,26 @@ def buildGroupMap(group) {
 def buildHtmlTemplate(groupMap, componentPartFile, componentListPartFile, templateFile, tempEmailFile, emailSubject) {
 
     if(!groupMap) { return }
-    
+
     def htmlTemplateParts  = ''
 
     groupMap.eachWithIndex { entry, i ->
 
         def htmlTemplateComponentPart = readFile(file: componentPartFile)
-        
+
         htmlTemplateComponentPart = htmlTemplateComponentPart.replace("{component.certificate.commonname.value}", entry.value.commonName)
         htmlTemplateComponentPart = htmlTemplateComponentPart.replace("{component.certificate.expirydate.value}", entry.value.expiryDate)
         htmlTemplateComponentPart = htmlTemplateComponentPart.replace("{component.certificate.serialnumber.value}", entry.value.serialNumber)
         htmlTemplateComponentPart = htmlTemplateComponentPart.replace("{component.certificate.issuer.value}", entry.value.issuer)
         htmlTemplateComponentPart = htmlTemplateComponentPart.replace("{component.certificate.status.value}", entry.value.status)
         htmlTemplateComponentPart = htmlTemplateComponentPart.replace("{component.certificate.days.value}", entry.value.daysToExpire)
-        
+
         def htmlTemplateComponentParts = ''
 
         entry.value.hostNameList.each { mapEntryValueListItem ->
 
             def htmlTemplateComponentListPart = readFile(file: componentListPartFile)
-            
+
             htmlTemplateComponentListPart = htmlTemplateComponentListPart.replace("{component.website.url.value}", mapEntryValueListItem)
             htmlTemplateComponentParts += htmlTemplateComponentListPart
         }
@@ -474,7 +474,7 @@ def aggregatedReport(aggregated, htmlTemplateParam, htmlpartParam, tempEmailFile
                 daysToExpire: listItem.daysToExpire
             ]
             aggregatedMap.put(listItem.serialNumber, aggregatedMapValue)
-        }                                
+        }
     }
 
     if(!aggregatedMap) { return }
@@ -484,14 +484,14 @@ def aggregatedReport(aggregated, htmlTemplateParam, htmlpartParam, tempEmailFile
     aggregatedMap.eachWithIndex { entry, i ->
 
         def htmlPart = readFile(file: htmlpartParam)
-        
+
         htmlPart = htmlPart.replace("{component.certificate.commonname.value}", entry.value.commonName)
         htmlPart = htmlPart.replace("{component.certificate.serialnumber.value}", entry.value.serialNumber)
         htmlPart = htmlPart.replace("{component.certificate.issuer.value}", entry.value.issuer)
         htmlPart = htmlPart.replace("{component.certificate.status.value}", entry.value.status)
         htmlPart = htmlPart.replace("{component.certificate.expirydate.value}", entry.value.expiryDate)
         htmlPart = htmlPart.replace("{component.certificate.days.value}", entry.value.daysToExpire)
-        
+
         htmlParts += htmlPart
     }
 
@@ -520,5 +520,3 @@ def sendBuildEmailNotification() {
             to: "${JOB_BUILD_EMAIL_RECIPIENTS}",
             replyTo: "${JOB_BUILD_EMAIL_RECIPIENTS}"
 }
-
-
