@@ -16,4 +16,6 @@ The pipeline script is in charge of executing the Bash script, to identify the e
 
 This pipeline has introduced a number of new concepts such as the usage of Map objects as well as the search and replace manipulation of the html report template files with values extracted from the SSL certificate details. The pipeline stages are executed as following:
 
+<img src="https://github.com/graadi/ssl-certificates-monitor-jenkins-pipeline/blob/main/images/jenkins-stages.png" />
+
 The "Config Report Date Parameter" stage will either create or modify a ```datestamp``` variable that will be used as the start date to calculate and decide whether the "Build Aggregated Report" stage will run or not. The aggregated report frequency is parameterized as well.
