@@ -196,7 +196,7 @@ pipeline {
                                 case "DL":
                                     print 'Domains List File'
 
-                                    def output = sh(returnStdout: true, script: '${WORKSPACE}/job_repo/ssl-cert-check.sh -i -S -f certificate-stores/' + certificateStoreFile)
+                                    def output = sh(returnStdout: true, script: '${WORKSPACE}/job_repo/ssl-certificates-monitor-bash-script.sh -i -S -f certificate-stores/' + certificateStoreFile)
 
                                     print '--------------- Domains List ---------------'
                                     print output
@@ -215,7 +215,7 @@ pipeline {
 
                                 case "CRT":
                                     print 'Certificate File'
-                                    def output = sh(returnStdout: true, script: '${WORKSPACE}/job_repo/ssl-cert-check.sh -c certificate-stores/' + certificateStoreFile + ' -t crt')
+                                    def output = sh(returnStdout: true, script: '${WORKSPACE}/job_repo/ssl-certificates-monitor-bash-script.sh -c certificate-stores/' + certificateStoreFile + ' -t crt')
 
                                     print '--------------- Certificate File ---------------'
                                     print output
