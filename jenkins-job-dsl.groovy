@@ -1,6 +1,6 @@
 pipelineJob("SSL Certificates Monitoring Tool") {
 
-    description("SSL Certificates Monitoring Tool")
+    description("SSL Certificates Monitoring Tool.")
 
     parameters {
 
