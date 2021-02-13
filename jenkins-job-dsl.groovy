@@ -33,15 +33,15 @@ pipelineJob("SSL Certificates Monitoring Tool") {
     // Define the pipeline script which is located in Git
     definition {
         cpsScm {
-        scm {
-            git {
-            branch("master")
-            remote {
-                name("origin")
-                url("git@github.com:graadi/ssl-certificates-monitor-jenkins-pipeline.git")
+            scm {
+                git {
+                    branch("master")
+                    remote {
+                        name("origin")
+                        url("git@github.com:graadi/ssl-certificates-monitor-jenkins-pipeline.git")
+                    }
+                }
             }
-            }
-        }
         // The path within source control to the pipeline jobs Jenkins file
         scriptPath("jenkins-pipeline.groovy")
         }
