@@ -1,6 +1,14 @@
 pipelineJob("SSL Certificates Monitoring Tool") {
 
     description("SSL Certificates Monitoring Tool.")
+    
+    logRotator {
+        
+        artifactDaysToKeep(0)
+        artifactNumToKeep(0)
+        daysToKeep(0)
+        numToKeep(10)
+    }
 
     parameters {
 
