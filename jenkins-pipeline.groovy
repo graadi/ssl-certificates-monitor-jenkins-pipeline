@@ -7,6 +7,7 @@
 // -------------------------------------------------------------- //
 
 def SDF_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS"
+def KEY_FILE_EXTENSION = "pwd"
 
 def switchCases = []
 def greenGroup  = []
@@ -24,6 +25,8 @@ def jobGitRepositoryBranch
 def reportFrequency
 def resetBaseDate
 def runAggregate
+
+def counter = 0
 
 pipeline {
 
@@ -190,6 +193,7 @@ pipeline {
                         certificateStoreFiles.each { certificateStoreFile ->
 
                             String type = certificateStoreFile.substring(certificateStoreFile.lastIndexOf(".") + 1).toUpperCase()
+                            print 'File[' + (++counter) + '] - ' + certificateStoreFile
 
                             switch(type) {
 
@@ -215,7 +219,7 @@ pipeline {
 
                                 case "CRT":
                                     print 'Certificate File'
-                                    def output = sh(returnStdout: true, script: '${WORKSPACE}/job_repo/ssl-certificates-monitor-bash-script.sh -c certificate-stores/' + certificateStoreFile + ' -t crt')
+                                    def output = sh(returnStdout: true, script: '${WORKSPACE}/job_repo/ssl-certificates-monitor-bash-script.sh -c certificate-stores/' + certificateStoreFile + ' -t ' + type.toLowerCase())
 
                                     print '--------------- Certificate File ---------------'
                                     print output
@@ -232,8 +236,32 @@ pipeline {
                                     }
                                     break
 
+                                case "P12":
+                                    print 'PKCS#12 binary format files.'
+                                    String keyFile = certificateStoreFile.substring(0, certificateStoreFile.lastIndexOf(".") + 1).concat(KEY_FILE_EXTENSION)
+                                    def output = sh(returnStdout: true, script: '${WORKSPACE}/job_repo/ssl-certificates-monitor-bash-script.sh -c certificate-stores/' + certificateStoreFile + ' -t ' + type.toLowerCase() + ' -w certificate-stores/' + keyFile)
+                                    
+                                    print '------------ PKCS#12 binary format files -------------'
+                                    print output
+                                    print '------------------------------------------------------'
+
+                                    def jsonContent = readJSON file: 'keystore-file-json-output.json'
+                                    def domainsCertificatesArray = jsonContent.certificatesList
+
+                                    domainsCertificatesArray.each { arrayEntry ->
+
+                                        def daysToExpire = arrayEntry.daysToExpire.toInteger()
+                                        addEntryToGroup(daysToExpire, arrayEntry, greenGroup, orangeGroup, redGroup, switchCases)
+                                        aggregated.add(arrayEntry)
+                                    }                                                                        
+                                    break
+
                                 case "JKS":
                                     print 'Certificate TrustStore. Yet to be implemented.'
+                                    break
+                                    
+                                case "PWD":
+                                    print 'No implementation required for this type of file.'                                    
                                     break
 
                                 default:
