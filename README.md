@@ -22,3 +22,4 @@ The "Config Report Date Parameter" stage will either create or modify a ```dates
 
 The following snapshot shows a practical example of how the parameters must be set for the job, in Jenkins.
 <img src="https://github.com/graadi/ssl-certificates-monitor-jenkins-pipeline/blob/main/images/jenkins-parameters-example.png" />
+
